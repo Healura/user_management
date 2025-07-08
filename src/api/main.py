@@ -1,17 +1,12 @@
-"""Main FastAPI application entry point."""
-
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config.auth_settings import auth_settings
-from src.health import health_router
+from src.api import auth_router, user_router, health_router, setup_middleware
 from src.database.database import init_db, check_database_connection
-from src.api.main import app
-
 
 # Configure logging
 logging.basicConfig(
@@ -20,7 +15,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-__all__ = ["app"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,30 +34,33 @@ async def lifespan(app: FastAPI):
     # Initialize database tables (in production, use migrations)
     # init_db()
     
+    # Start background tasks
+    # TODO: Start session cleanup task
+    
     yield
     
     # Shutdown
     logger.info("Shutting down user management service...")
+    # TODO: Stop background tasks
 
 
 # Create FastAPI application
 app = FastAPI(
     title="Voice Biomarker User Management Service",
-    description="User management microservice for voice biomarker healthcare application",
+    description="User management and authentication microservice for voice biomarker healthcare application",
     version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     lifespan=lifespan
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=auth_settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Setup middleware
+setup_middleware(app)
 
 # Include routers
+app.include_router(auth_router)
+app.include_router(user_router)
 app.include_router(health_router)
 
 # Root endpoint
@@ -73,7 +70,8 @@ async def root():
     return {
         "service": "Voice Biomarker User Management Service",
         "version": "1.0.0",
-        "status": "operational"
+        "status": "operational",
+        "documentation": "/docs"
     }
 
 # Global exception handler
