@@ -48,34 +48,7 @@ class RateLimiter:
                 logger.warning(f"Redis connection failed, using memory store: {e}")
         return None
     
-    async def check_user_rate_limit(
-    user_id: str,
-    max_requests: Optional[int] = None,
-    window_seconds: Optional[int] = None
-) -> None:
-    """
-    Check rate limit for a specific user.
-    
-    Args:
-        user_id: User ID
-        max_requests: Maximum requests
-        window_seconds: Time window
-        
-    Raises:
-        RateLimitExceeded: If rate limit exceeded
-    """
-    if max_requests is None:
-        max_requests = auth_settings.rate_limit_requests_per_minute
-    if window_seconds is None:
-        window_seconds = 60
-    
-    key = f"user_rate_limit:{user_id}"
-    is_allowed, retry_after = await _rate_limiter.check_rate_limit(
-        key, max_requests, window_seconds
-    )
-    
-    if not is_allowed:
-        raise RateLimitExceeded(retry_after) check_rate_limit(
+    async def check_rate_limit(
         self,
         key: str,
         max_requests: int,
@@ -242,3 +215,107 @@ def rate_limit(
         return wrapper
     return decorator
 
+
+async def check_user_rate_limit(
+    user_id: str,
+    max_requests: Optional[int] = None,
+    window_seconds: Optional[int] = None
+) -> None:
+    """
+    Check rate limit for a specific user.
+    
+    Args:
+        user_id: User ID
+        max_requests: Maximum requests
+        window_seconds: Time window
+        
+    Raises:
+        RateLimitExceeded: If rate limit exceeded
+    """
+    if max_requests is None:
+        max_requests = auth_settings.rate_limit_requests_per_minute
+    if window_seconds is None:
+        window_seconds = 60
+    
+    key = f"user_rate_limit:{user_id}"
+    is_allowed, retry_after = await _rate_limiter.check_rate_limit(
+        key, max_requests, window_seconds
+    )
+    
+    if not is_allowed:
+        raise RateLimitExceeded(retry_after)
+
+
+async def check_ip_rate_limit(
+    ip_address: str,
+    max_requests: int = 1000,
+    window_seconds: int = 3600
+) -> None:
+    """
+    Check rate limit for an IP address.
+    
+    Args:
+        ip_address: IP address
+        max_requests: Maximum requests (default: 1000/hour)
+        window_seconds: Time window (default: 1 hour)
+        
+    Raises:
+        RateLimitExceeded: If rate limit exceeded
+    """
+    key = f"ip_rate_limit:{ip_address}"
+    is_allowed, retry_after = await _rate_limiter.check_rate_limit(
+        key, max_requests, window_seconds
+    )
+    
+    if not is_allowed:
+        raise RateLimitExceeded(retry_after)
+
+
+class RateLimitMiddleware:
+    """Middleware for automatic rate limiting."""
+    
+    def __init__(
+        self,
+        max_requests_per_minute: int = 100,
+        max_requests_per_hour: int = 1000
+    ):
+        self.max_requests_per_minute = max_requests_per_minute
+        self.max_requests_per_hour = max_requests_per_hour
+    
+    async def __call__(self, request: Request, call_next):
+        """Apply rate limiting to all requests."""
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # Check hourly limit
+        try:
+            await check_ip_rate_limit(
+                client_ip,
+                self.max_requests_per_hour,
+                3600
+            )
+        except RateLimitExceeded as e:
+            return JSONResponse(
+                status_code=e.status_code,
+                content={"detail": e.detail},
+                headers=e.headers
+            )
+        
+        # Check per-minute limit for non-GET requests
+        if request.method != "GET":
+            try:
+                await check_rate_limit(
+                    request,
+                    self.max_requests_per_minute,
+                    60,
+                    f"rate_limit_write:{client_ip}"
+                )
+            except RateLimitExceeded as e:
+                return JSONResponse(
+                    status_code=e.status_code,
+                    content={"detail": e.detail},
+                    headers=e.headers
+                )
+        
+        # Process request
+        response = await call_next(request)
+        return response

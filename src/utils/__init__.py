@@ -5,7 +5,7 @@ from .validation import (
     sanitize_input,
     validate_uuid
 )
-from .jwt_utils import create_jwt_token, decode_jwt_token
+from .jwt_utils import create_jwt_token, decode_jwt_token, create_email_verification_token, create_password_reset_token
 from .email_utils import send_email, send_verification_email, send_password_reset_email
 from .rate_limiting import RateLimiter, rate_limit
 
@@ -22,6 +22,8 @@ __all__ = [
     # JWT
     "create_jwt_token",
     "decode_jwt_token",
+    "create_email_verification_token",
+    "create_password_reset_token",
     # Email
     "send_email",
     "send_verification_email",

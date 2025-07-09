@@ -1,3 +1,5 @@
+"""Security middleware for request validation and protection."""
+
 import logging
 import uuid
 import time

@@ -1,3 +1,5 @@
+"""HIPAA-compliant audit logging using existing audit_logs table."""
+
 import logging
 from typing import Optional, Dict, Any
 from uuid import UUID

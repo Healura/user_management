@@ -30,6 +30,7 @@ redis==5.0.1
 python-dotenv==1.0.0
 httpx==0.25.2
 python-dateutil==2.8.2
+psutil==5.9.6
 
 # Development & Testing
 pytest==7.4.3

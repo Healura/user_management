@@ -1,3 +1,5 @@
+"""Security module for access control and audit logging."""
+
 from .access_control import (
     check_resource_access,
     check_user_permission,
