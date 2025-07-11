@@ -29,6 +29,7 @@ class AuthSettings(BaseSettings):
     # Session Configuration
     max_sessions_per_user: int = Field(default=5, env="MAX_SESSIONS_PER_USER")
     session_timeout_minutes: int = Field(default=60, env="SESSION_TIMEOUT_MINUTES")
+    session_cleanup_interval_minutes: int = Field(default=60, env="SESSION_CLEANUP_INTERVAL_MINUTES")
     
     # Security Settings
     max_login_attempts: int = Field(default=5, env="MAX_LOGIN_ATTEMPTS")

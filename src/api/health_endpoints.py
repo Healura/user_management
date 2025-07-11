@@ -168,11 +168,15 @@ async def auth_health(db: Session = Depends(get_db)):
 
 @router.get("/rate-limiting", response_model=Dict[str, Any])
 async def rate_limiting_health():
-    """Check rate limiting service health."""
+    """Get rate limiting system status."""
+    from ..utils.rate_limiting import RateLimiter
+    
+    _rate_limiter = RateLimiter()
+    
     status = {
         "status": "operational",
-        "backend": "memory",
         "redis_available": False,
+        "memory_store_active": True,
         "configuration": {
             "requests_per_minute": auth_settings.rate_limit_requests_per_minute,
             "burst_requests": auth_settings.rate_limit_burst_requests
@@ -201,6 +205,40 @@ async def rate_limiting_health():
         }
     
     return status
+
+
+@router.get("/background-tasks", response_model=Dict[str, Any])
+async def background_tasks_health():
+    """Get background tasks status."""
+    try:
+        from ..auth import get_background_tasks_status
+        
+        task_status = await get_background_tasks_status()
+        
+        # Calculate overall status
+        overall_status = "operational"
+        if not task_status["running"]:
+            overall_status = "stopped"
+        elif task_status["scheduler_state"] != "running":
+            overall_status = "degraded"
+        
+        return {
+            "status": overall_status,
+            "timestamp": datetime.utcnow().isoformat(),
+            "task_manager": task_status,
+            "configuration": {
+                "session_cleanup_interval_minutes": auth_settings.session_cleanup_interval_minutes,
+                "session_timeout_minutes": auth_settings.session_timeout_minutes,
+                "max_sessions_per_user": auth_settings.max_sessions_per_user
+            }
+        }
+    except Exception as e:
+        logger.error(f"Background tasks health check failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 
 @router.get("/system", response_model=Dict[str, Any])
@@ -303,6 +341,11 @@ async def get_health_status(db: Session) -> Dict[str, Any]:
         "audit_logging": {
             "enabled": True,
             "recent_logs": 0
+        },
+        "background_tasks": {
+            "status": "unknown",
+            "running": False,
+            "jobs": []
         }
     }
     
@@ -356,6 +399,15 @@ async def get_health_status(db: Session) -> Dict[str, Any]:
         status["audit_logging"]["recent_logs"] = recent_count
     except Exception as e:
         status["audit_logging"]["error"] = str(e)
+    
+    # Check background tasks
+    try:
+        from ..auth import get_background_tasks_status
+        task_status = await get_background_tasks_status()
+        status["background_tasks"]["running"] = task_status["running"]
+        status["background_tasks"]["jobs"] = task_status["jobs"]
+    except Exception as e:
+        status["background_tasks"]["error"] = str(e)
     
     return status
 

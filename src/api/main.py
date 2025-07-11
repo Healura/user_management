@@ -6,7 +6,10 @@ from fastapi.responses import JSONResponse
 
 from config.auth_settings import auth_settings
 from . import auth_router, user_router, health_router, setup_middleware
+# from . import compliance_router
+# from . import notification_router
 from ..database.database import init_db, check_database_connection
+from ..auth import start_background_tasks, stop_background_tasks
 
 # Configure logging
 logging.basicConfig(
@@ -35,13 +38,23 @@ async def lifespan(app: FastAPI):
     # init_db()
     
     # Start background tasks
-    # TODO: Start session cleanup task
+    try:
+        await start_background_tasks()
+        logger.info("Background tasks started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start background tasks: {e}")
+        # Continue without background tasks in case of failure
     
     yield
     
     # Shutdown
     logger.info("Shutting down user management service...")
-    # TODO: Stop background tasks
+    # Stop background tasks
+    try:
+        await stop_background_tasks()
+        logger.info("Background tasks stopped successfully")
+    except Exception as e:
+        logger.error(f"Error stopping background tasks: {e}")
 
 
 # Create FastAPI application
@@ -62,6 +75,8 @@ setup_middleware(app)
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(health_router)
+# app.include_router(notification_router)
+# app.include_router(compliance_router)
 
 # Root endpoint
 @app.get("/")

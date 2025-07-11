@@ -235,3 +235,98 @@ class AuditLog(Base):
     def __repr__(self):
         return f"<AuditLog(id={self.id}, action={self.action}, user_id={self.user_id})>"
 
+
+class UserDevice(Base):
+    """User devices for push notifications."""
+    
+    __tablename__ = "user_devices"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    device_token = Column(String(255), nullable=False, unique=True)
+    device_type = Column(String(50))  # 'ios', 'android', 'web'
+    device_name = Column(String(100))
+    platform_version = Column(String(50))
+    app_version = Column(String(50))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_used_at = Column(DateTime(timezone=True))
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    
+    def __repr__(self):
+        return f"<UserDevice(id={self.id}, user_id={self.user_id}, device_type={self.device_type})>"
+
+
+class SMSOptInOut(Base):
+    """SMS opt-in/opt-out tracking for compliance."""
+    
+    __tablename__ = "sms_opt_in_out"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    phone_number = Column(String(20), nullable=False, index=True)
+    status = Column(String(20), nullable=False)  # 'opted_in', 'opted_out'
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    source = Column(String(50))  # 'sms_keyword', 'web_form', 'api', etc.
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    
+    def __repr__(self):
+        return f"<SMSOptInOut(id={self.id}, phone_number={self.phone_number}, status={self.status})>"
+
+
+class ScheduledNotification(Base):
+    """One-time scheduled notifications."""
+    
+    __tablename__ = "scheduled_notifications"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    notification_type = Column(String(50), nullable=False)
+    scheduled_time = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String(20), default="pending")  # 'pending', 'sent', 'failed', 'cancelled'
+    data = Column(JSONB)
+    result = Column(JSONB)
+    sent_at = Column(DateTime(timezone=True))
+    cancelled_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    
+    def __repr__(self):
+        return f"<ScheduledNotification(id={self.id}, user_id={self.user_id}, type={self.notification_type})>"
+
+
+class RecurringNotification(Base):
+    """Recurring scheduled notifications."""
+    
+    __tablename__ = "recurring_notifications"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    notification_type = Column(String(50), nullable=False)
+    schedule_type = Column(String(20), nullable=False)  # 'daily', 'weekly', 'monthly', 'custom_cron', 'interval'
+    cron_expression = Column(String(100))
+    interval_seconds = Column(Integer)
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True))
+    timezone = Column(String(50), default="UTC")
+    is_active = Column(Boolean, default=True)
+    data = Column(JSONB)
+    last_run = Column(DateTime(timezone=True))
+    next_run = Column(DateTime(timezone=True))
+    run_count = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    cancelled_at = Column(DateTime(timezone=True))
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    
+    def __repr__(self):
+        return f"<RecurringNotification(id={self.id}, user_id={self.user_id}, type={self.notification_type})>"
+

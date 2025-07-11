@@ -28,6 +28,10 @@ python-dotenv==1.0.0
 httpx==0.25.2
 python-dateutil==2.8.2
 psutil==5.9.6
+pytz==2023.3
+
+# Scheduling
+APScheduler==3.10.4
 
 # Development & Testing
 pytest==7.4.3

@@ -33,6 +33,12 @@ from .dependencies import (
     require_admin,
     require_healthcare_provider
 )
+from .background_tasks import (
+    start_background_tasks,
+    stop_background_tasks,
+    get_background_tasks_status,
+    get_task_manager
+)
 
 __all__ = [
     # Authentication
@@ -64,4 +70,9 @@ __all__ = [
     "get_current_user_dependency",
     "require_admin",
     "require_healthcare_provider",
+    # Background Tasks
+    "start_background_tasks",
+    "stop_background_tasks",
+    "get_background_tasks_status",
+    "get_task_manager",
 ]
