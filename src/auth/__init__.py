@@ -9,7 +9,9 @@ from .authentication import (
 from .authorization import (
     check_permission,
     require_role,
-    RoleChecker
+    RoleChecker,
+    assign_default_role,
+    admin_required
 )
 from .password_policy import (
     validate_password,
@@ -44,6 +46,8 @@ __all__ = [
     "check_permission",
     "require_role",
     "RoleChecker",
+    "assign_default_role",
+    "admin_required",
     # Password
     "validate_password",
     "hash_password",

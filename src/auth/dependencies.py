@@ -5,10 +5,10 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
-from src.database.database import get_db
-from src.database.models import User
-from src.auth.authentication import get_current_user, AuthenticationError
-from src.auth.authorization import RoleChecker
+from ..database.database import get_db
+from ..database.models import User
+from ..auth.authentication import get_current_user, AuthenticationError
+from ..auth.authorization import RoleChecker
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ async def verify_email_token(
     Raises:
         HTTPException: If token is invalid
     """
-    from src.utils.jwt_utils import decode_jwt_token
+    from ..utils.jwt_utils import decode_jwt_token
     
     try:
         payload = decode_jwt_token(token)
@@ -169,7 +169,7 @@ async def verify_password_reset_token(
     Raises:
         HTTPException: If token is invalid
     """
-    from src.utils.jwt_utils import decode_jwt_token
+    from ..utils.jwt_utils import decode_jwt_token
     
     try:
         payload = decode_jwt_token(token)

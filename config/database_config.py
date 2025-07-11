@@ -17,7 +17,7 @@ class DatabaseConfig(BaseSettings):
     rds_port: int = Field(default=5432, env="RDS_PORT")
     rds_db_name: str = Field(default="voice_biomarker_users", env="RDS_DB_NAME")
     rds_username: str = Field(default="postgres", env="RDS_USERNAME")
-    rds_password: SecretStr = Field(..., env="RDS_PASSWORD")
+    rds_password: Optional[SecretStr] = Field(default=None, env="RDS_PASSWORD")
     
     # Connection Pool Settings
     db_pool_size: int = Field(default=5, env="DB_POOL_SIZE")
@@ -34,6 +34,7 @@ class DatabaseConfig(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Allow extra fields in .env file
 
 
 def get_database_url(config: Optional[DatabaseConfig] = None) -> str:
@@ -50,6 +51,9 @@ def get_database_url(config: Optional[DatabaseConfig] = None) -> str:
         config = DatabaseConfig()
     
     # Construct base URL
+    if config.rds_password is None:
+        raise ValueError("RDS_PASSWORD environment variable is required")
+    
     password = config.rds_password.get_secret_value()
     base_url = (
         f"postgresql+psycopg2://{config.rds_username}:{password}"

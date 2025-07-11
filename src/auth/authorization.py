@@ -2,11 +2,11 @@ import logging
 from typing import List, Optional, Callable
 from functools import wraps
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
-from src.database.models import User
-from src.database.repositories import UserRoleAssignmentRepository
+from ..database.models import User
+from ..database.repositories import UserRoleAssignmentRepository
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,28 @@ def require_role(roles: List[str], require_all: bool = False):
     return decorator
 
 
+def create_role_checker(allowed_roles: List[str], require_all: bool = False):
+    """
+    Create a role checker function for FastAPI dependencies.
+    
+    Args:
+        allowed_roles: List of role names required
+        require_all: If True, user must have all roles
+        
+    Returns:
+        Dependency function
+    """
+    def role_checker(current_user: User) -> User:
+        if not check_permission(current_user, allowed_roles, require_all):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions. Required roles: {', '.join(allowed_roles)}"
+            )
+        return current_user
+    
+    return role_checker
+
+
 class RoleChecker:
     """
     Dependency class for role-based access control in FastAPI.
@@ -139,7 +161,7 @@ async def assign_default_role(
         user_id: User ID
         default_role: Role name to assign (default: "patient")
     """
-    from src.database.repositories import UserRoleRepository
+    from ..database.repositories import UserRoleRepository
     
     role_repo = UserRoleRepository(db)
     role_assignment_repo = UserRoleAssignmentRepository(db)
@@ -190,3 +212,21 @@ def has_permission(user: User, permission: str) -> bool:
     """
     user_permissions = get_user_permissions(user)
     return permission in user_permissions
+
+
+def admin_required():
+    """
+    Create a dependency function that requires admin role.
+    
+    Returns:
+        A dependency function that checks admin role
+    """
+    def check_admin(current_user: User) -> None:
+        if not check_permission(current_user, ["admin"]):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions. Admin role required."
+            )
+        return None
+    
+    return check_admin

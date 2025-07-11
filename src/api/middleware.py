@@ -1,13 +1,17 @@
+"""Middleware configuration for the FastAPI application."""
+
 import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_client import Counter, Histogram, generate_latest
 from fastapi.responses import Response
 import time
 
 from config.auth_settings import auth_settings
-from src.security.security_middleware import SecurityMiddleware
+from ..security.security_middleware import SecurityMiddleware
 
 logger = logging.getLogger(__name__)
 

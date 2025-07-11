@@ -7,10 +7,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy.orm import Session
 
-from src.database.database import get_db
-from src.database.models import User
-from src.database.repositories import UserRepository, UserRoleRepository
-from src.auth import (
+from ..database.database import get_db
+from ..database.models import User
+from ..database.repositories import UserRepository, UserRoleRepository
+from ..auth import (
     authenticate_user,
     create_access_token,
     create_refresh_token,
@@ -21,12 +21,12 @@ from src.auth import (
     MFAManager,
     assign_default_role
 )
-from src.auth.dependencies import (
+from ..auth.dependencies import (
     CurrentUser,
     verify_email_token,
     verify_password_reset_token
 )
-from src.utils import (
+from ..utils import (
     create_email_verification_token,
     create_password_reset_token,
     send_verification_email,
@@ -34,8 +34,8 @@ from src.utils import (
     validate_email,
     sanitize_input
 )
-from src.security import AuditLogger
-from src.utils.rate_limiting import rate_limit
+from ..security import AuditLogger
+from ..utils.rate_limiting import rate_limit
 
 logger = logging.getLogger(__name__)
 

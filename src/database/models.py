@@ -40,7 +40,7 @@ class User(Base):
     data_retention_days = Column(Integer, default=365)
     
     # Relationships
-    role_assignments = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")
+    role_assignments = relationship("UserRoleAssignment", back_populates="user", foreign_keys="UserRoleAssignment.user_id", cascade="all, delete-orphan")
     audio_files = relationship("AudioFile", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
     notification_preferences = relationship("NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")

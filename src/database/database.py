@@ -4,7 +4,7 @@ import logging
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import create_engine, event, pool
+from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -25,7 +25,7 @@ engine = create_engine(
     echo=database_config.db_echo,
     connect_args={
         "sslmode": database_config.db_ssl_mode,
-        "connect_timeout": 10,
+        "connect_timeout": 30,  # Increased for AWS RDS
         "options": "-c statement_timeout=30000"  # 30 second statement timeout
     }
 )
@@ -97,7 +97,7 @@ def check_database_connection() -> bool:
     """
     try:
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         return True
     except SQLAlchemyError as e:
         logger.error(f"Database connection failed: {e}")

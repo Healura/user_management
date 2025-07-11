@@ -8,11 +8,11 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from src.database.database import get_db, check_database_connection, engine
-from src.database.repositories import UserRepository, UserSessionRepository, AuditLogRepository
+from ..database.database import get_db, check_database_connection, engine
+from ..database.repositories import UserRepository, UserSessionRepository, AuditLogRepository
 from config.database_config import database_config
 from config.auth_settings import auth_settings
-from src.utils.rate_limiting import _rate_limiter
+from ..utils.rate_limiting import _rate_limiter
 
 logger = logging.getLogger(__name__)
 

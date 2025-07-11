@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from config.auth_settings import auth_settings
-from src.api import auth_router, user_router, health_router, setup_middleware
-from src.database.database import init_db, check_database_connection
+from . import auth_router, user_router, health_router, setup_middleware
+from ..database.database import init_db, check_database_connection
 
 # Configure logging
 logging.basicConfig(

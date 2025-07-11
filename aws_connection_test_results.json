@@ -1,0 +1,94 @@
+{
+  "timestamp": "2025-07-11T09:52:40.586087",
+  "tests": {
+    "AWS Credentials Configuration": {
+      "status": "passed",
+      "message": "AWS credentials configured for region eu-central-1",
+      "details": {
+        "aws_access_key_configured": true,
+        "aws_secret_key_configured": true,
+        "aws_region": "eu-central-1",
+        "credentials_source": "environment_variables_or_dotenv",
+        "dotenv_file_exists": true,
+        "aws_access_key_preview": "AKIAYA26...WI74"
+      },
+      "timestamp": "2025-07-11T09:52:40.586127"
+    },
+    "AWS Identity Verification": {
+      "status": "passed",
+      "message": "Authenticated as IAM User: AIDAYA26XN3STPTYEAX4R",
+      "details": {
+        "user_id": "AIDAYA26XN3STPTYEAX4R",
+        "account_id": "551565094629",
+        "arn": "arn:aws:iam::551565094629:user/voice-biomarker-dev",
+        "user_type": "IAM User"
+      },
+      "timestamp": "2025-07-11T09:52:42.790009"
+    },
+    "RDS Permissions": {
+      "status": "passed",
+      "message": "RDS access verified - Found Voice Biomarker DB (available)",
+      "details": {
+        "total_rds_instances": 1,
+        "can_describe_instances": true,
+        "voice_biomarker_db_found": true,
+        "db_identifier": "voice-biomarker-users-db",
+        "db_status": "available",
+        "db_endpoint": "voice-biomarker-users-db.cnq0agmieipg.eu-central-1.rds.amazonaws.com",
+        "db_engine": "postgres"
+      },
+      "timestamp": "2025-07-11T09:52:44.231050"
+    },
+    "S3 Permissions": {
+      "status": "passed",
+      "message": "S3 access verified (2 Voice Biomarker buckets found)",
+      "details": {
+        "total_buckets": 3,
+        "can_list_buckets": true,
+        "voice_biomarker_buckets": [
+          "voice-biomarker-audio-files-eu-central-1",
+          "voice-biomarker-cloudtrail-logs-1"
+        ],
+        "can_list_objects": true
+      },
+      "timestamp": "2025-07-11T09:52:46.352137"
+    },
+    "KMS Permissions": {
+      "status": "passed",
+      "message": "KMS access verified (0 Voice Biomarker keys found)",
+      "details": {
+        "total_keys_found": 2,
+        "can_list_keys": true,
+        "voice_biomarker_keys": 0,
+        "can_describe_keys": true
+      },
+      "timestamp": "2025-07-11T09:52:46.716344"
+    },
+    "CloudWatch Logs Permissions": {
+      "status": "passed",
+      "message": "CloudWatch Logs access verified (0 Voice Biomarker log groups found)",
+      "details": {
+        "total_log_groups": 0,
+        "can_describe_log_groups": true,
+        "voice_biomarker_log_groups": []
+      },
+      "timestamp": "2025-07-11T09:52:47.576893"
+    },
+    "Secrets Manager Permissions": {
+      "status": "passed",
+      "message": "Secrets Manager access verified (0 Voice Biomarker secrets found)",
+      "details": {
+        "total_secrets": 0,
+        "can_list_secrets": true,
+        "voice_biomarker_secrets": []
+      },
+      "timestamp": "2025-07-11T09:52:48.619178"
+    }
+  },
+  "summary": {
+    "total_tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "warnings": 0
+  }
+}

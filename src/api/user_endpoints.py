@@ -7,17 +7,17 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, EmailStr, Field, validator
 from sqlalchemy.orm import Session
 
-from src.database.database import get_db
-from src.database.models import User, UserSession
-from src.database.repositories import (
+from ..database.database import get_db
+from ..database.models import User, UserSession
+from ..database.repositories import (
     UserRepository,
     UserSessionRepository,
     AuditLogRepository
 )
-from src.auth.dependencies import CurrentUser, AdminUser
-from src.auth.authorization import RoleChecker
-from src.security import AuditLogger
-from src.utils.validation import sanitize_input, validate_phone_number
+from ..auth.dependencies import CurrentUser, AdminUser
+from ..auth.authorization import RoleChecker, admin_required, check_permission
+from ..security import AuditLogger
+from ..utils.validation import sanitize_input, validate_phone_number
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class UserProfile(BaseModel):
     roles: List[str]
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UpdateProfileRequest(BaseModel):
@@ -78,7 +78,7 @@ class SessionInfo(BaseModel):
     is_active: bool
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserListResponse(BaseModel):
@@ -98,7 +98,7 @@ class AuditLogEntry(BaseModel):
     details: Optional[dict]
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Helper function to format user profile
@@ -190,7 +190,7 @@ async def delete_account(
     user_repo.update(current_user.id, is_active=False)
     
     # Invalidate all sessions
-    from src.auth.session_manager import SessionManager
+    from ..auth.session_manager import SessionManager
     session_manager = SessionManager(db)
     await session_manager.invalidate_all_user_sessions(current_user.id)
     
@@ -277,15 +277,23 @@ async def revoke_all_sessions(
 
 
 # Admin endpoints
-@router.get("/", response_model=UserListResponse, dependencies=[Depends(RoleChecker(["admin"]))])
+@router.get("/", response_model=UserListResponse)
 async def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
+    current_user: CurrentUser = CurrentUser,
     db: Session = Depends(get_db)
 ):
     """List all users (admin only)."""
+    # Check admin permission
+    if not check_permission(current_user, ["admin"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Admin role required."
+        )
+    
     user_repo = UserRepository(db)
     
     # Calculate offset
@@ -311,14 +319,21 @@ async def list_users(
     )
 
 
-@router.put("/{user_id}/status", dependencies=[Depends(RoleChecker(["admin"]))])
+@router.put("/{user_id}/status")
 async def update_user_status(
     user_id: UUID,
     is_active: bool,
-    admin_user: AdminUser,
+    current_user: CurrentUser = CurrentUser,
     db: Session = Depends(get_db)
 ):
     """Activate or deactivate a user (admin only)."""
+    # Check admin permission
+    if not check_permission(current_user, ["admin"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Admin role required."
+        )
+    
     user_repo = UserRepository(db)
     
     # Get user
@@ -335,7 +350,7 @@ async def update_user_status(
     # Log status change
     audit_logger = AuditLogger(db)
     await audit_logger.log_user_modification(
-        modifier_id=admin_user.id,
+        modifier_id=current_user.id,
         user_id=user_id,
         action="status_change",
         changes={"is_active": is_active}
@@ -344,13 +359,21 @@ async def update_user_status(
     return {"message": f"User {'activated' if is_active else 'deactivated'} successfully"}
 
 
-@router.get("/{user_id}/audit", response_model=List[AuditLogEntry], dependencies=[Depends(RoleChecker(["admin"]))])
+@router.get("/{user_id}/audit", response_model=List[AuditLogEntry])
 async def get_user_audit_log(
     user_id: UUID,
+    current_user: CurrentUser = CurrentUser,
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db)
 ):
     """Get audit log for a specific user (admin only)."""
+    # Check admin permission
+    if not check_permission(current_user, ["admin"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Admin role required."
+        )
+    
     audit_repo = AuditLogRepository(db)
     
     # Get audit logs
