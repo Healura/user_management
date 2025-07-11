@@ -57,3 +57,11 @@ migrations/versions/*
 
 # AWS
 .aws/
+
+# Test files with credentials (keep locally but don't commit)
+test_database_config.py
+test_database_setup.py
+test_aws_connection.py
+test_network_connectivity.py
+*_test_results.json
+setup_aws_credentials.py
